@@ -1,6 +1,4 @@
-/*
 **Q1**
-*/
 
 WITH sales AS (
     SELECT ProductName,
@@ -26,9 +24,7 @@ SELECT ProductName,
 FROM ranked_sales
 WHERE sales_rank <= 3;
 
-/*
 **Q2**
-*/
 
 WITH purchases AS (
     SELECT CustomerKey,
@@ -54,11 +50,7 @@ SELECT SalesTerritoryRegion,
 FROM first_second_purchases
 GROUP BY SalesTerritoryRegion;
 
-
-
-/*
 **Q3**
-*/
 
 WITH customer_age AS (
     SELECT  CustomerKey, 
