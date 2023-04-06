@@ -1,5 +1,5 @@
 /*
-**Q4.1**
+**Q1**
 */
 
 WITH sales AS (
@@ -27,7 +27,7 @@ FROM ranked_sales
 WHERE sales_rank <= 3;
 
 /*
-**Q4.2**
+**Q2**
 */
 
 WITH purchases AS (
@@ -57,7 +57,7 @@ GROUP BY SalesTerritoryRegion;
 
 
 /*
-**Q4.3**
+**Q3**
 */
 
 WITH customer_age AS (
