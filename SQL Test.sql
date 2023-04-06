@@ -1,75 +1,134 @@
 **Q1**
 
-WITH sales AS (
-    SELECT ProductName,
-           SalesTerritoryRegion,
-           SUM(SalesAmount) AS total_sales
-    FROM f_sales
-    LEFT JOIN d_sales_territory ON f_sales.SalesTerritoryKey = d_sales_territory.SalesTerritoryKey
-    LEFT JOIN d_product ON f_sales.ProductKey = d_product.ProductKey
-    GROUP BY ProductName, SalesTerritoryRegion
-    )
-
-WITH ranked_sales AS (
-    SELECT ProductName,
-           SalesTerritoryRegion,
-           total_sales,
-           RANK() OVER (PARTITION BY SalesTerritoryRegion ORDER BY total_sales DESC) AS sales_rank
-    FROM sales
-    )
-
-SELECT ProductName,
-       SalesTerritoryRegion,
-       total_sales
-FROM ranked_sales
-WHERE sales_rank <= 3;
+SELECT
+user_id
+,user_name
+FROM User 
+WHERE
+staff_id  = ‘ThuyNT’
 
 **Q2**
 
-WITH purchases AS (
-    SELECT CustomerKey,
-           SalesTerritoryRegion,
-           OrderDate,
-           ROW_NUMBER() OVER (PARTITION BY CustomerKey ORDER BY OrderDate) AS purchase_number
-    FROM f_sales
-    LEFT JOIN d_sales_territory ON f_sales.SalesTerritoryKey = d_sales_territory.SalesTerritoryKey
-    )
-
-WITH first_second_purchases AS (
-    SELECT CustomerKey,
-           SalesTerritoryRegion,
-           MIN(CASE WHEN purchase_number = 1 THEN OrderDate END) AS first_purchase,
-           MIN(CASE WHEN purchase_number = 2 THEN OrderDate END) AS second_purchase
-    FROM purchases
-    WHERE purchase_number IN (1, 2)
-    GROUP BY CustomerKey, SalesTerritoryRegion
-    )   
-
-SELECT SalesTerritoryRegion,
-       AVG(DATEDIFF(day, first_purchase, second_purchase)) AS avg_days_between_first_second_purchase
-FROM first_second_purchases
-GROUP BY SalesTerritoryRegion;
+SELECT
+		date_trunc (‘day’, order_date)
+		,sum(stop_point) as total_stop_point
+	FROM Order
+	WHERE
+		date_trunc (‘day’, order_date) >= ‘2020-03-01’
+		And date_trunc (‘day’, order_date) <= ‘2020-03-15’
+	GROUP BY
+		date_trunc (‘day’, order_date)
+	ORDER BY
+		date_trunc (‘day’, order_date)
 
 **Q3**
 
-WITH customer_age AS (
-    SELECT  CustomerKey, 
-            DATEDIFF(YY, BirthYear, 2014) AS age
-    FROM d_customer
-    )
+WITH d_sp AS (
+		SELECT 
+(discount/stop_point) AS d_sp
+,order_date
+		FROM Order
+WHERE EXTRACT (month from order_date) = 3 
+)
+	SELECT avg (d_sp)
+	FROM d_sp
 
-WITH  customer_age_group AS (
-    SELECT  CustomerKey,
-            CASE
-                WHEN age < 25 THEN '<25'
-                WHEN age BETWEEN 25 AND 50 THEN '25-50'
-                ELSE '>50'
-            END AS age_group
-    FROM customer_age
-    )
+**Q4**
 
-SELECT age_group,
-       MEDIAN(SalesAmount) AS median_revenue
-FROM customer_age_group
-RIGHT JOIN f_sales ON customer_age_group.CustomerKey = f_sales.CustomerKey
-GROUP BY age_group;
+SELECT 
+Staff.staff_id
+		,Staff.staff_name
+		,SUM(Order.stop_point)/monthly_target*100 as complete_mounthly_target
+	FROM Order
+	JOIN User ON User.user_id = Order.user_id
+	JOIN Staff ON Staff.staff_id = User. staff_id
+	WHERE Order.order_date >= ‘2020-03-01’
+		and Order.order_date <= ‘2020-03-31’
+	GROUP BY Staff.staff_id
+
+**Q5**
+
+SELECT 
+		User.category
+		,sum(Order.stop_point) as total_stop_point
+	FROM Order
+	JOIN User ON User.user_id = Order.user_id
+	WHERE Order.order_date >= ‘2020-03-01’
+		AND Order.order_date <= ‘2020-03-31’
+	GROUP BY User.category
+	ORDER BY total_stop_point DESC
+	LIMIT 3
+
+**Q6**
+
+SELECT 
+Staff.staff_id
+		,Staff.staff_name
+		,SUM(total_fee) as total_revenue
+	FROM Order
+	JOIN User ON User.user_id = Order.user_id
+	JOIN Staff ON Staff.staff_id = User.staff_id
+	WHERE Order.order_date = ‘2020-01-03’
+	GROUP BY Staff.staff_id
+   
+**Q7**
+
+WITH stop_point_daily as (
+		SELECT 
+sum(stop_point) as sum_stop_point
+			,date_trunc (‘day’, order_date) as daily
+		FROM Order
+		GROUP BY daily
+	SELECT 
+		date_trunc (‘month’, daily) as month
+		max (sum_stop_point) as max_stop_point_daily
+		FROM stop_point_daily
+		GROUP BY month
+		ORDER BY month
+   
+**Q8**
+    
+WITH t_sp AS (
+		SELECT 
+			Order.order_date
+			,User.user_name
+			,sum(Order.stop_point) as t_sp
+		FROM Order
+		JOIN User ON User.user_id = Order.user_id
+		GROUP BY User.user_name
+		)
+SELECT
+		date_trunc (‘month’, order_date) as order_month
+		,user_name
+		,max(t_sp) as total_stop_point
+	FROM t_sp
+	GROUP BY order_month
+	ORDER BY order_month
+
+**Q9**
+
+SELECT 
+		,Staff.staff_name
+		,SUM(Order.stop_point) / Staff.monthly_target * 100 AS complete_target
+		,CASE AS total_salary
+			WHEN complete_target <100 THEN 0.8 * Staff.base_salary
+			WHEN complete_target =100 THEN Staff.base_salary
+			WHEN complete_target >100 THEN Staff.base_salary + 20000*(1-complete_target/100)*complete_target
+		END as total_salary
+	FROM Order
+	JOIN User ON User.user_id = Order.user_id
+	JOIN Staff ON Staff.staff_id = User. staff_id
+	WHERE Order.order_date >= ‘2020-03-01’
+		and Order.order_date <= ‘2020-03-31’
+	GROUP BY Staff.staff_name
+    
+ **Q10**
+    
+With temp as (select staff_name, extract(month from order_date) as month,sum(stop_point) as stop_point
+from order left join user using (user_id) left join staff using (staff_id) 
+where extract(month from order_date) between 2 and 5 group by 1,2 order by 1,2 )
+
+Select staff_name,
+(lead(stop_point,1) over (partition by staff_name order by month)/stop_point - 1) as M03_growth_rate,
+(lead(stop_point,2) over (partition by staff_name order by month)/(lead(stop_point,1) over (partition by staff_name order by month) -1) as M04_growth_rate,
+(lead(stop_point,3) over (partition by staff_name order by month)/(lead(stop_point,2) over (partition by staff_name order by month) -1) as M05_growth_rate from temp
