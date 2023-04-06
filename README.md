@@ -1,3 +1,1 @@
-1. Use Standard SQL to solve these questions What are the top three products by sales amount in each region? 
-2. Calculate the average days between the first and second purchase in each region Divide customers into 3 groups (<25 years old, 25-50 years old, >50 years old). 
-3. What is the median revenue of each group?
+Sử dụng thông tin từ các table ở [đây](https://docs.google.com/document/d/1g1z7spFia0QoJnZ-7aWFZ4V7rCkNj1OJWFi3dGKjwtM/edit?usp=sharing) trên viết query để trả lời các câu hỏi
